@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ms">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LiveWatch Token Test</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 0 16px;
+      line-height: 1.5;
+    }
+    input, button {
+      box-sizing: border-box;
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+      font-size: 16px;
+    }
+    pre {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      background: #f2f2f2;
+      padding: 12px;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>LiveWatch Token Test</h1>
+  <p>Masukkan URL asas Cloudflare Worker anda. Jangan masukkan API key.</p>
+
+  <label for="worker">Worker URL</label>
+  <input id="worker" type="url"
+    placeholder="https://nama-worker.workers.dev"
+    autocomplete="url">
+
+  <button id="test">Test POST /api/live-token</button>
+  <pre id="result">Belum diuji.</pre>
+
+  <script>
+    const button = document.getElementById("test");
+    const result = document.getElementById("result");
+
+    button.addEventListener("click", async () => {
+      const worker = document.getElementById("worker").value
+        .trim().replace(/\/+$/, "");
+
+      if (!worker.startsWith("https://")) {
+        result.textContent = "Sila masukkan URL Worker yang bermula dengan https://";
+        return;
+      }
+
+      button.disabled = true;
+      result.textContent = "Menghantar permintaan POST...";
+
+      try {
+        const response = await fetch(worker + "/api/live-token", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: "{}"
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (response.ok && typeof data.token === "string" && data.token) {
+          result.textContent =
+            "BERJAYA: Token sementara diterima.\n" +
+            "Nilai token tidak dipaparkan.";
+        } else {
+          result.textContent =
+            "GAGAL: HTTP " + response.status + "\n" +
+            (data.error || "Respons tidak mengandungi token.");
+        }
+      } catch (error) {
+        result.textContent =
+          "RALAT RANGKAIAN: " + error.message +
+          "\nSemak URL Worker dan konfigurasi CORS.";
+      } finally {
+        button.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
